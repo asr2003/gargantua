@@ -43,7 +43,7 @@ impl Blueprint {
             async_graphql_parser::parse_schema(schema)
                 .map_err(|e| ValidationError::new(Error::from(e))),
         )
-        .map(|document| Blueprint::parse_doc(document))
+        .map(Blueprint::parse_doc)
     }
 
     pub fn to_index(&self) -> Index {
@@ -181,7 +181,7 @@ fn default_true() -> bool {
     true
 }
 fn default_false() -> bool {
-    true
+    false
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

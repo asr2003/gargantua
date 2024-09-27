@@ -15,6 +15,16 @@ const setupRustStep = new Step({
   },
 });
 
+const runRustfmtStep = new Step({
+  name: "Run rustfmt",
+  run: "cargo fmt --all -- --check",
+});
+
+const runClippyStep = new Step({
+  name: "Run clippy",
+  run: "cargo clippy --all -- -D warnings",
+});
+
 const runTestsStep = new Step({
   name: "Run tests",
   run: "cargo test --workspace",
@@ -24,7 +34,13 @@ const testJob = new NormalJob("Test", {
   "runs-on": "ubuntu-latest",
 });
 
-testJob.addSteps([checkoutStep, setupRustStep, runTestsStep]);
+testJob.addSteps([
+  checkoutStep,
+  setupRustStep,
+  runRustfmtStep,
+  runClippyStep,
+  runTestsStep,
+]);
 
 export const rustTestWorkflow = new Workflow("rust-test", {
   name: "Rust Test",

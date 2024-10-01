@@ -1,35 +1,25 @@
 import { Workflow, NormalJob, Step } from "github-actions-workflow-ts";
 
-const checkoutStep = new Step({
-  name: "Checkout",
-  uses: "actions/checkout@v4",
-});
+const MACHINE = "ubuntu-latest";
 
-const setupNode = new Step({
-  name: "Setup Node",
-  uses: "actions/setup-node@v4",
-  with: { "node-version": "20" },
-});
+const checkoutStep = () =>
+  new Step({
+    name: "Checkout",
+    uses: "actions/checkout@v4",
+  });
+
+const setupNode = () =>
+  new Step({
+    name: "Setup Node",
+    uses: "actions/setup-node@v4",
+    with: { "node-version": "20" },
+  });
+
 const checkWorkflow = new Step({
-  name: "Validate workflows",
-  run: [
-    "npm i",
-    "npm run generate-workflows",
-    `if [[ $(git diff --name-only .github/workflows/) ]]; then
-      echo "Workflows are out of sync. Please regenerate them.";
-      exit 1;
-    fi`,
-  ].join("\n"),
-  shell: "bash",
-});
-const setupRust = new Step({
-  name: "Setup Rust",
-  uses: "actions-rs/toolchain@v1",
-  with: {
-    profile: "minimal",
-    toolchain: "stable",
-    override: true,
-  },
+  name: "Validate Workflows",
+  run: ["npm i", "npm run build", "npm run check-workflows"]
+    .map((_) => _.trim())
+    .join("\n"),
 });
 
 const runRustfmtStep = new Step({
@@ -43,26 +33,34 @@ const runClippyStep = new Step({
 });
 
 const runTests = new Step({
-  name: "Run tests",
+  name: "Run Tests",
   run: "cargo test --workspace",
 });
 
-const testJob = new NormalJob("Test", {
-  "runs-on": "ubuntu-latest",
-});
-
-testJob.addSteps([
-  checkoutStep,
-  setupNode,
-  checkWorkflow,
-  setupRust,
-  runRustfmtStep,
-  runClippyStep,
-  runTests,
+// Wasm build job
+const wasmBuildJob = new NormalJob("WASM", {
+  "runs-on": MACHINE,
+}).addSteps([
+  new Step({
+    run: "rustup target add wasm32-unknown-unknown",
+  }),
+  new Step({
+    run: "cargo build --target wasm32-unknown-unknown --workspace",
+  }),
 ]);
 
-export const mainWorkflow = new Workflow("ci", {
-  name: "Rust Test",
+// Default job
+const defaultJob = new NormalJob("Test", {
+  "runs-on": MACHINE,
+}).addSteps([checkoutStep(), runRustfmtStep, runClippyStep, runTests]);
+
+// Workflow validation job
+const workflowValidateJob = new NormalJob("Validate", {
+  "runs-on": MACHINE,
+}).addSteps([checkoutStep(), setupNode(), checkWorkflow]);
+
+export const workflow = new Workflow("ci", {
+  name: "CI",
   on: {
     push: {
       branches: ["main"],
@@ -71,6 +69,4 @@ export const mainWorkflow = new Workflow("ci", {
       branches: ["main"],
     },
   },
-});
-
-mainWorkflow.addJob(testJob);
+}).addJobs([defaultJob, wasmBuildJob, workflowValidateJob]);

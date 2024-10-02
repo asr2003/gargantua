@@ -314,10 +314,7 @@ fn extract_directives(
         .map(|Positioned { node: dir_node, .. }| {
             let arguments = extract_arguments(dir_node.arguments);
 
-            Directive {
-                name: dir_node.name.into_inner().to_string(),
-                arguments,
-            }
+            Directive { name: dir_node.name.into_inner().to_string(), arguments }
         })
         .collect()
 }

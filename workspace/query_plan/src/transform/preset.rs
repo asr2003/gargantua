@@ -12,6 +12,7 @@ pub struct Preset<A> {
 }
 
 impl<A> Preset<A> {
+    #[allow(dead_code)]
     pub fn new(index: Rc<Index>) -> Self {
         Self { index, _marker: std::marker::PhantomData }
     }

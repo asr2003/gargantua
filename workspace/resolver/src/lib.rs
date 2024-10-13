@@ -1,6 +1,6 @@
 use blueprint::{Blueprint, Graph};
 use futures::future;
-use query_plan::{QueryPlan, SelectionSet, TypeName};
+use query_plan::{Fetch, QueryPlan, SelectionSet, TypeName};
 
 // TODO: implement reference implementation
 pub trait ResolverContextTrait {
@@ -62,11 +62,11 @@ pub async fn resolve<Ctx: ResolverContextTrait + Clone>(
 
             value
         }
-        QueryPlan::Fetch { service, query, representations, type_name } => {
+        QueryPlan::Fetch(Fetch { service, selection_set, representations, type_name, .. }) => {
             let req = prepare_req(
                 blueprint,
                 &service,
-                &query.selection_set,
+                &selection_set,
                 &representations,
                 type_name,
             );
@@ -115,7 +115,7 @@ fn merge(value: serde_json::Value, other_value: serde_json::Value) -> serde_json
 
 fn prepare_req<Value>(
     _blueprint: &Blueprint,
-    _service: &Graph,
+    _service: &Option<Graph>,
     _query: &SelectionSet<Value>,
     _representations: &Option<SelectionSet<Value>>,
     _type_name: TypeName,

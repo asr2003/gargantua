@@ -3,9 +3,8 @@ use std::rc::Rc;
 use blueprint::Index;
 use valid::Transform;
 
-use crate::QueryPlan;
-
 use super::{Enrich, Minify};
+use crate::QueryPlan;
 
 pub struct Preset<A> {
     index: Rc<Index>,
@@ -13,6 +12,7 @@ pub struct Preset<A> {
 }
 
 impl<A> Preset<A> {
+    #[allow(dead_code)]
     pub fn new(index: Rc<Index>) -> Self {
         Self { index, _marker: std::marker::PhantomData }
     }

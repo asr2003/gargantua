@@ -1,9 +1,10 @@
-use std::{marker::PhantomData, rc::Rc};
+use std::marker::PhantomData;
+use std::rc::Rc;
 
 use blueprint::{Index, QueryField};
 use valid::{Transform, Valid, Validator};
 
-use crate::{FetchDefinition, QueryPlan, SelectionSet};
+use crate::{Fetch, QueryPlan, SelectionSet, TypeName};
 
 pub struct Enrich<Value> {
     index: Rc<Index>,
@@ -18,31 +19,31 @@ impl<Value: Clone> Enrich<Value> {
     fn iter_sel(
         &self,
         selection: SelectionSet<Value>,
-        container_type: &str,
+        parent_type: &str,
     ) -> Valid<SelectionSet<Value>, String> {
         // this field belongs to container_type, so we if want to get this field
-        let type_def = match self.index.get_object_type_definition(container_type) {
+        let type_def = match self.index.get_object_type_definition(parent_type) {
             Some(type_def) => type_def,
             None => {
                 return Valid::fail(format!(
                     "type definition not found for type '{}' ",
-                    container_type
+                    parent_type
                 ));
             }
         };
 
-        Valid::from_iter(selection.into_vec().into_iter(), |field| {
-            let field_def = match self.index.get_field(container_type, &field.name) {
+        Valid::from_iter(selection.into_vec(), |field| {
+            let field_def = match self.index.get_field(parent_type, &field.name) {
                 Some(QueryField::Field((def, _))) => def,
                 _ => {
                     return Valid::fail(format!(
                         "field definition not found for field '{}' in type '{}' ",
-                        field.name, container_type
+                        field.name, parent_type
                     ));
                 }
             };
 
-            let field = if field_def.join_fields.is_empty() {
+            let mut field = if field_def.join_fields.is_empty() {
                 // if field doesn't have @join__field directive, then
                 // we need to figure out from where this field can be queried
 
@@ -67,8 +68,13 @@ impl<Value: Clone> Enrich<Value> {
                 field.join_field(field_def.join_fields.clone())
             };
 
+            let type_name = field_def.of_type.as_type_str();
+
+            field = field
+                .field_type(Some(TypeName::new(type_name.to_string())))
+                .parent_type(Some(TypeName::new(parent_type.to_string())));
+
             if !field.selections.is_empty() {
-                let type_name = field_def.of_type.as_type_str();
                 let selection = field.selections.clone();
                 self.iter_sel(selection, &type_name)
                     .map(|selection_set| field.selections(selection_set))
@@ -85,7 +91,7 @@ impl<Value: Clone> Enrich<Value> {
         container_type: &str,
     ) -> Valid<QueryPlan<Value>, String> {
         match query {
-            QueryPlan::Fetch(FetchDefinition {
+            QueryPlan::Fetch(Fetch {
                 name,
                 arguments,
                 variables,
@@ -97,7 +103,7 @@ impl<Value: Clone> Enrich<Value> {
             }) => self
                 .iter_sel(selection_set, container_type)
                 .map(|selection_set| {
-                    QueryPlan::Fetch(FetchDefinition {
+                    QueryPlan::Fetch(Fetch {
                         name,
                         arguments,
                         variables,
@@ -134,7 +140,7 @@ impl<Value: Clone> Transform for Enrich<Value> {
             self.index.get_query(),
             "Root operation for `query` is not defined".to_string(),
         )
-        .and_then(|root_type| self.iter(value, &root_type))
+        .and_then(|root_type| self.iter(value, root_type))
     }
 }
 
@@ -155,7 +161,7 @@ mod test {
         let index = setup(include_str!(
             "../../../blueprint/src/fixtures/router.graphql"
         ));
-        let qp = QueryPlan::try_new(&query).unwrap();
+        let qp = QueryPlan::try_new(query).unwrap();
 
         let enriched_selection_set = Enrich::new(Rc::new(index))
             .transform(qp)

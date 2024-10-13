@@ -11,7 +11,7 @@ use crate::error::Error;
 pub enum QueryPlan<Value> {
     Parallel(Vec<QueryPlan<Value>>),
     Sequence(Vec<QueryPlan<Value>>),
-    Fetch(FetchDefinition<Value>),
+    Fetch(Fetch<Value>),
     Flatten {
         select: Lens,
         plan: Box<QueryPlan<Value>>,
@@ -19,7 +19,7 @@ pub enum QueryPlan<Value> {
 }
 
 #[derive(Debug, Clone, Setters)]
-pub struct FetchDefinition<Value> {
+pub struct Fetch<Value> {
     pub name: Option<String>,
     pub arguments: Vec<Argument<Value>>,
     pub variables: Vec<VariableDefinition<Value>>,
@@ -40,7 +40,7 @@ pub struct VariableDefinition<Value> {
 }
 
 impl QueryPlan<async_graphql_value::Value> {
-    pub fn fetch(fetch: FetchDefinition<async_graphql_value::Value>) -> Self {
+    pub fn fetch(fetch: Fetch<async_graphql_value::Value>) -> Self {
         QueryPlan::Fetch(fetch)
     }
 }
@@ -55,11 +55,11 @@ impl QueryPlan<async_graphql_value::Value> {
         for (name, Positioned { node: op, .. }) in doc.operations.iter() {
             let name = name.map(|n| n.to_string());
             let selection_set = SelectionSet::from(&op.selection_set.node);
-            let type_name = TypeName::new(&op.ty.to_string());
+            let type_name = TypeName::new(op.ty.to_string());
             let directives = extract_directives(op.directives.clone());
             let variables = extract_variables(op.variable_definitions.clone());
 
-            let fetch = FetchDefinition {
+            let fetch = Fetch {
                 name,
                 type_name,
                 arguments: Vec::new(),
@@ -90,8 +90,8 @@ impl QueryPlan<async_graphql_value::Value> {
 pub struct TypeName(String);
 
 impl TypeName {
-    pub fn new(name: &str) -> Self {
-        TypeName(name.to_string())
+    pub fn new(name: String) -> Self {
+        TypeName(name)
     }
 
     pub fn as_str(&self) -> &str {
@@ -141,6 +141,12 @@ pub struct Field<Value> {
 
     /// Internal readonly information from the Blueprint Index.
     pub join_field: Vec<JoinField>,
+
+    /// The type of the field.
+    pub field_type: Option<TypeName>,
+
+    /// The type in which this field is defined.
+    pub parent_type: Option<TypeName>,
 }
 
 impl<A> Field<A> {
@@ -154,6 +160,8 @@ impl<A> Field<A> {
             is_hidden: false,
             graph: Vec::new(),
             join_field: Vec::new(),
+            parent_type: None,
+            field_type: None,
         }
     }
 }
@@ -306,10 +314,7 @@ fn extract_directives(
         .map(|Positioned { node: dir_node, .. }| {
             let arguments = extract_arguments(dir_node.arguments);
 
-            Directive {
-                name: dir_node.name.into_inner().to_string(),
-                arguments: arguments,
-            }
+            Directive { name: dir_node.name.into_inner().to_string(), arguments }
         })
         .collect()
 }
@@ -339,7 +344,7 @@ fn extract_variables(
         .map(
             |Positioned { node: variable_node, .. }| VariableDefinition {
                 name: variable_node.name.node.to_string(),
-                type_name: TypeName::new(&variable_node.var_type.node.base.to_string()),
+                type_name: TypeName::new(variable_node.var_type.node.base.to_string()),
                 nullable: variable_node.var_type.node.nullable,
                 directives: extract_directives(variable_node.directives.clone()),
                 default_value: variable_node

@@ -5,7 +5,7 @@ expression: actual
 Parallel(
     [
         Fetch(
-            FetchDefinition {
+            Fetch {
                 name: None,
                 arguments: [],
                 variables: [],
@@ -28,6 +28,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                     Field {
                                         name: "reviews",
@@ -45,6 +47,8 @@ Parallel(
                                                     is_hidden: false,
                                                     graph: [],
                                                     join_field: [],
+                                                    field_type: None,
+                                                    parent_type: None,
                                                 },
                                             ],
                                         ),
@@ -53,6 +57,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                     Field {
                                         name: "reviews",
@@ -70,6 +76,8 @@ Parallel(
                                                     is_hidden: false,
                                                     graph: [],
                                                     join_field: [],
+                                                    field_type: None,
+                                                    parent_type: None,
                                                 },
                                             ],
                                         ),
@@ -78,6 +86,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                 ],
                             ),
@@ -86,6 +96,8 @@ Parallel(
                             is_hidden: false,
                             graph: [],
                             join_field: [],
+                            field_type: None,
+                            parent_type: None,
                         },
                     ],
                 ),

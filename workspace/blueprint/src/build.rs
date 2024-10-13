@@ -2,24 +2,13 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use async_graphql_parser::Positioned;
 use async_graphql_value::{ConstValue, Name};
+use serde::de::DeserializeOwned;
 
 use crate::{
     Blueprint, Definition, Directive, DirectiveDefinition, EnumValueDefinition, FieldDefinition,
     InputFieldDefinition, JoinEnum, JoinField, JoinGraph, JoinImplements, JoinType, JoinUnion,
     SchemaDefinition, Type,
 };
-
-macro_rules! extract_join {
-    ($item:expr, $name:expr, $ty:ty) => {
-        $item
-            .filter(|directive| directive.name == $name)
-            .map(|directive| {
-                let t: $ty = serde_json::from_value(directive.arguments).unwrap();
-                t
-            })
-            .collect::<Vec<$ty>>()
-    };
-}
 
 // Reading a super-graph configuration is infallible
 pub fn parse(doc: async_graphql_parser::types::ServiceDocument) -> Blueprint {
@@ -85,35 +74,7 @@ pub fn parse(doc: async_graphql_parser::types::ServiceDocument) -> Blueprint {
     let definitions = definitions.clone().into_values().collect::<Vec<_>>();
     let directives = directives.into_values().collect::<Vec<_>>();
 
-    let join_graphs = definitions
-        .clone()
-        .into_iter()
-        .find_map(|definition| {
-            if let Definition::Enum(enumeration) = definition {
-                if enumeration.name == "join__Graph" {
-                    let data =
-                        enumeration
-                            .enum_values
-                            .into_iter()
-                            .fold(Vec::new(), |mut acc, cur| {
-                                let mut join_graphs: Vec<JoinGraph> = extract_join!(
-                                    cur.directives.into_iter(),
-                                    "join__graph",
-                                    JoinGraph
-                                );
-                                acc.append(&mut join_graphs);
-                                acc
-                            });
-
-                    Some(data)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
-        .expect("Enumeration `join__Graph` is not found");
+    let join_graphs = parse_join_graphs(definitions.clone());
 
     Blueprint { definitions, schema: root_schema, directives, join_graphs }
 }
@@ -186,8 +147,7 @@ fn parse_type(type_node: async_graphql_parser::types::TypeDefinition) -> Definit
 
     match type_node.kind {
         async_graphql_parser::types::TypeKind::Scalar => {
-            let join_types: Vec<JoinType> =
-                extract_join!(directives.clone().into_iter(), "join__type", JoinType);
+            let join_types: Vec<JoinType> = find_directive(&directives, "join__type");
             Definition::Scalar(crate::ScalarTypeDefinition {
                 name,
                 directives,
@@ -208,13 +168,9 @@ fn parse_type(type_node: async_graphql_parser::types::TypeDefinition) -> Definit
                 .map(|name| name.to_string())
                 .collect::<BTreeSet<String>>();
 
-            let join_types: Vec<JoinType> =
-                extract_join!(directives.clone().into_iter(), "join__type", JoinType);
-            let join_implements: Vec<JoinImplements> = extract_join!(
-                directives.clone().into_iter(),
-                "join__implements",
-                JoinImplements
-            );
+            let join_types: Vec<JoinType> = find_directive(&directives, "join__type");
+            let join_implements: Vec<JoinImplements> =
+                find_directive(&directives, "join__implements");
 
             Definition::Object(crate::ObjectTypeDefinition {
                 name,
@@ -232,13 +188,9 @@ fn parse_type(type_node: async_graphql_parser::types::TypeDefinition) -> Definit
                 .map(|Positioned { pos: _, node: field_node }| parse_field(field_node))
                 .collect();
 
-            let join_types: Vec<JoinType> =
-                extract_join!(directives.clone().into_iter(), "join__type", JoinType);
-            let join_implements: Vec<JoinImplements> = extract_join!(
-                directives.clone().into_iter(),
-                "join__implements",
-                JoinImplements
-            );
+            let join_types: Vec<JoinType> = find_directive(&directives, "join__type");
+            let join_implements: Vec<JoinImplements> =
+                find_directive(&directives, "join__implements");
             Definition::Interface(crate::InterfaceTypeDefinition {
                 name,
                 fields,
@@ -254,13 +206,8 @@ fn parse_type(type_node: async_graphql_parser::types::TypeDefinition) -> Definit
                 .map(|type_name| type_name.into_inner().to_string())
                 .collect();
 
-            let join_types: Vec<JoinType> =
-                extract_join!(directives.clone().into_iter(), "join__type", JoinType);
-            let join_unions: Vec<JoinUnion> = extract_join!(
-                directives.clone().into_iter(),
-                "join__unionMember",
-                JoinUnion
-            );
+            let join_types: Vec<JoinType> = find_directive(&directives, "join__type");
+            let join_unions: Vec<JoinUnion> = find_directive(&directives, "join__unionMember");
 
             Definition::Union(crate::UnionTypeDefinition {
                 name,
@@ -278,8 +225,7 @@ fn parse_type(type_node: async_graphql_parser::types::TypeDefinition) -> Definit
                 .map(|Positioned { pos: _, node: enum_node }| parse_enum(enum_node))
                 .collect();
 
-            let join_types: Vec<JoinType> =
-                extract_join!(directives.clone().into_iter(), "join__type", JoinType);
+            let join_types: Vec<JoinType> = find_directive(&directives, "join__type");
             Definition::Enum(crate::EnumTypeDefinition {
                 name,
                 directives,
@@ -297,8 +243,7 @@ fn parse_type(type_node: async_graphql_parser::types::TypeDefinition) -> Definit
                 })
                 .collect();
 
-            let join_types: Vec<JoinType> =
-                extract_join!(directives.into_iter(), "join__type", JoinType);
+            let join_types: Vec<JoinType> = find_directive(&directives, "join__type");
             Definition::InputObject(crate::InputObjectTypeDefinition {
                 name,
                 fields,
@@ -318,8 +263,7 @@ fn parse_enum(enum_node: async_graphql_parser::types::EnumValueDefinition) -> En
         .map(|Positioned { pos: _, node: directive_node }| parse_directive(directive_node))
         .collect();
 
-    let join_enums: Vec<JoinEnum> =
-        extract_join!(directives.clone().into_iter(), "join__enumValue", JoinEnum);
+    let join_enums: Vec<JoinEnum> = find_directive(&directives, "join__enumValue");
     EnumValueDefinition { description, name, directives, join_enums }
 }
 
@@ -340,8 +284,7 @@ fn parse_field(field_node: async_graphql_parser::types::FieldDefinition) -> Fiel
         .map(|Positioned { pos: _, node: directive_node }| parse_directive(directive_node))
         .collect();
 
-    let join_fields: Vec<JoinField> =
-        extract_join!(directives.clone().into_iter(), "join__field", JoinField);
+    let join_fields: Vec<JoinField> = find_directive(&directives, "join__field");
 
     FieldDefinition { name, args, of_type, directives, description, join_fields }
 }
@@ -363,8 +306,7 @@ fn parse_input_field(
         .map(|Positioned { pos: _, node: directive_node }| parse_directive(directive_node))
         .collect();
 
-    let join_fields: Vec<JoinField> =
-        extract_join!(directives.into_iter(), "join__field", JoinField);
+    let join_fields: Vec<JoinField> = find_directive(&directives, "join__field");
 
     InputFieldDefinition { name, of_type, default_value, description, join_fields }
 }
@@ -433,6 +375,43 @@ fn parse_arguments(
 
 fn parse_argument(argument_node: async_graphql_value::ConstValue) -> serde_json::Value {
     argument_node.into_json().unwrap()
+}
+
+fn parse_join_graphs(definitions: Vec<Definition>) -> Vec<JoinGraph> {
+    definitions
+        .into_iter()
+        .find_map(|definition| {
+            if let Definition::Enum(enumeration) = definition {
+                if enumeration.name == "join__Graph" {
+                    let data =
+                        enumeration
+                            .enum_values
+                            .into_iter()
+                            .fold(Vec::new(), |mut acc, cur| {
+                                let mut join_graphs: Vec<JoinGraph> =
+                                    find_directive(&cur.directives, "join__graph");
+
+                                acc.append(&mut join_graphs);
+                                acc
+                            });
+
+                    Some(data)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .expect("Enumeration `join__Graph` is not found")
+}
+
+fn find_directive<Value: DeserializeOwned>(directives: &[Directive], name: &str) -> Vec<Value> {
+    directives
+        .iter()
+        .filter(|directive| directive.name == name)
+        .map(|directive| serde_json::from_value(directive.arguments.clone()).unwrap())
+        .collect()
 }
 
 #[cfg(test)]

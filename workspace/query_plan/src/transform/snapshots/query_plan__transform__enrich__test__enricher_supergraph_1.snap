@@ -4,16 +4,11 @@ expression: enriched_selection_set
 ---
 Parallel(
     [
-        Fetch {
-            service: Graph(
-                "",
-            ),
-            query: QueryOperation {
+        Fetch(
+            Fetch {
                 name: None,
-                ty: TypeName(
-                    "query",
-                ),
                 arguments: [],
+                variables: [],
                 directives: [],
                 selection_set: SelectionSet(
                     [
@@ -49,6 +44,16 @@ Parallel(
                                                 used_overridden: None,
                                             },
                                         ],
+                                        field_type: Some(
+                                            TypeName(
+                                                "String",
+                                            ),
+                                        ),
+                                        parent_type: Some(
+                                            TypeName(
+                                                "Product",
+                                            ),
+                                        ),
                                     },
                                     Field {
                                         name: "reviews",
@@ -70,6 +75,16 @@ Parallel(
                                                         ),
                                                     ],
                                                     join_field: [],
+                                                    field_type: Some(
+                                                        TypeName(
+                                                            "String",
+                                                        ),
+                                                    ),
+                                                    parent_type: Some(
+                                                        TypeName(
+                                                            "Review",
+                                                        ),
+                                                    ),
                                                 },
                                             ],
                                         ),
@@ -92,6 +107,16 @@ Parallel(
                                                 used_overridden: None,
                                             },
                                         ],
+                                        field_type: Some(
+                                            TypeName(
+                                                "Review",
+                                            ),
+                                        ),
+                                        parent_type: Some(
+                                            TypeName(
+                                                "Product",
+                                            ),
+                                        ),
                                     },
                                     Field {
                                         name: "reviews",
@@ -113,6 +138,16 @@ Parallel(
                                                         ),
                                                     ],
                                                     join_field: [],
+                                                    field_type: Some(
+                                                        TypeName(
+                                                            "ID",
+                                                        ),
+                                                    ),
+                                                    parent_type: Some(
+                                                        TypeName(
+                                                            "Review",
+                                                        ),
+                                                    ),
                                                 },
                                             ],
                                         ),
@@ -135,6 +170,16 @@ Parallel(
                                                 used_overridden: None,
                                             },
                                         ],
+                                        field_type: Some(
+                                            TypeName(
+                                                "Review",
+                                            ),
+                                        ),
+                                        parent_type: Some(
+                                            TypeName(
+                                                "Product",
+                                            ),
+                                        ),
                                     },
                                 ],
                             ),
@@ -157,14 +202,25 @@ Parallel(
                                     used_overridden: None,
                                 },
                             ],
+                            field_type: Some(
+                                TypeName(
+                                    "Product",
+                                ),
+                            ),
+                            parent_type: Some(
+                                TypeName(
+                                    "Query",
+                                ),
+                            ),
                         },
                     ],
                 ),
+                representations: None,
+                type_name: TypeName(
+                    "query",
+                ),
+                service: None,
             },
-            representations: None,
-            type_name: TypeName(
-                "query",
-            ),
-        },
+        ),
     ],
 )

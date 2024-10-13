@@ -5,7 +5,7 @@ expression: actual
 Parallel(
     [
         Fetch(
-            FetchDefinition {
+            Fetch {
                 name: Some(
                     "getData",
                 ),
@@ -75,6 +75,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                     Field {
                                         name: "username",
@@ -89,6 +91,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                     Field {
                                         name: "role",
@@ -106,6 +110,8 @@ Parallel(
                                                     is_hidden: false,
                                                     graph: [],
                                                     join_field: [],
+                                                    field_type: None,
+                                                    parent_type: None,
                                                 },
                                                 Field {
                                                     name: "name",
@@ -118,6 +124,8 @@ Parallel(
                                                     is_hidden: false,
                                                     graph: [],
                                                     join_field: [],
+                                                    field_type: None,
+                                                    parent_type: None,
                                                 },
                                             ],
                                         ),
@@ -126,6 +134,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                 ],
                             ),
@@ -148,6 +158,8 @@ Parallel(
                             is_hidden: false,
                             graph: [],
                             join_field: [],
+                            field_type: None,
+                            parent_type: None,
                         },
                         Field {
                             name: "stores",
@@ -177,6 +189,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                     Field {
                                         name: "name",
@@ -207,6 +221,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                 ],
                             ),
@@ -238,6 +254,8 @@ Parallel(
                             is_hidden: false,
                             graph: [],
                             join_field: [],
+                            field_type: None,
+                            parent_type: None,
                         },
                     ],
                 ),
@@ -249,7 +267,7 @@ Parallel(
             },
         ),
         Fetch(
-            FetchDefinition {
+            Fetch {
                 name: Some(
                     "logVisit",
                 ),
@@ -289,6 +307,8 @@ Parallel(
                                                     is_hidden: false,
                                                     graph: [],
                                                     join_field: [],
+                                                    field_type: None,
+                                                    parent_type: None,
                                                 },
                                                 Field {
                                                     name: "date",
@@ -301,6 +321,8 @@ Parallel(
                                                     is_hidden: false,
                                                     graph: [],
                                                     join_field: [],
+                                                    field_type: None,
+                                                    parent_type: None,
                                                 },
                                             ],
                                         ),
@@ -309,6 +331,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                 ],
                             ),
@@ -329,6 +353,8 @@ Parallel(
                             is_hidden: false,
                             graph: [],
                             join_field: [],
+                            field_type: None,
+                            parent_type: None,
                         },
                     ],
                 ),
@@ -340,7 +366,7 @@ Parallel(
             },
         ),
         Fetch(
-            FetchDefinition {
+            Fetch {
                 name: Some(
                     "newMessages",
                 ),
@@ -384,6 +410,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                     Field {
                                         name: "text",
@@ -396,6 +424,8 @@ Parallel(
                                         is_hidden: false,
                                         graph: [],
                                         join_field: [],
+                                        field_type: None,
+                                        parent_type: None,
                                     },
                                 ],
                             ),
@@ -413,6 +443,8 @@ Parallel(
                             is_hidden: false,
                             graph: [],
                             join_field: [],
+                            field_type: None,
+                            parent_type: None,
                         },
                     ],
                 ),
